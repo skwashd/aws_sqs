@@ -1,0 +1,15 @@
+<?php
+
+function aws_sqs_menu() {
+  $items = array();
+
+  $items['admin/config/system/aws-queue'] = array(
+    'title' => 'Amazon SQS Settings',
+    'description' => 'Configure your Amazon SQS Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_sqs_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'aws_sqs.admin.inc',
+  );
+  return $items;
+}

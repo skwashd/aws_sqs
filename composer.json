@@ -1,0 +1,26 @@
+{
+    "name": "drupal/aws_sqs",
+    "type": "drupal-module",
+    "description": "Use the Amazon Simple Queue System.",
+    "keywords": ["sqs", "amazon", "queue"],
+    "homepage": "",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+          "name": "Nick Veenhof",
+          "email": "nick.veenhof@acquia.com",
+          "homepage": "http://nickveenhof.be/"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "CEikermann/AmazonSQS": "dev-master"
+    },
+    "minimum-stability": "dev",
+    "repositories": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nickveenhof/AmazonSQS"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+This file is just a basic queue implementation to show you how to start
+using this queue system
+
+First of all, go to admin/config/system/aws-queue and configure your
+AWS credentials.
+
+These credentials can be found at https://portal.aws.amazon.com/gp/aws/securityCredentials
+under Access Keys
+
+If you want to replace all Drupal queue systems with the amazon queue you can
+check the checkbox in the admin page but this is not required.
+
+See code snippet below on how to use this module
+
+// initialize the queue
+$queue = new awsSqsQueue('aws_test', 'us-east-2');
+// Create the queue
+$queue->createQueue();
+// Get some data
+$item = array('test', '1', '2', '3');
+// Add the data to the queue
+$queue->createItem($item);
+// Fetch the item from the queue
+$item = $queue->claimItem();
+
+If you decide to move all your queues to Amazon platform and check the checkbox
+you can use the following code
+
+// initialize the queue
+$queue = DrupalQueue::get('aws_test');
+// Create the queue
+$queue->createQueue();
+// Get some data
+$item = array('test', '1', '2', '3');
+// Add the data to the queue
+$queue->createItem($item);
+// fetch the item from the queue
+$item = $queue->claimItem();
