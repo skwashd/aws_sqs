@@ -49,8 +49,6 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     $this->name = $name;
     $options = self::getOptions($name);
 
-    $this->setWaitTimeSeconds($options['waitTimeSeconds']);
-
     // Check if the keys are there
     if (empty($options['key']) || empty($options['secret'])) {
       throw new Exception("AWS Credentials not found");
@@ -223,7 +221,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    * Gets the protected waitTimeSeconds value
    */
   public function getWaitTimeSeconds() {
-    $options =  self::getOptions($name);
+    $options =  self::getOptions($this->name);
     return $options['waitTimeSeconds'];
   }
 }
