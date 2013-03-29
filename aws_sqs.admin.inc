@@ -17,14 +17,14 @@ function aws_sqs_settings_form() {
   );
 
   $seconds = range(0, 20);
-  $form['aws_sqs_poll_seconds'] = array(
+  $form['aws_sqs_waittimeseconds'] = array(
     '#type' => 'select',
-    '#title' => t('How many seconds can the fetchItem call wait before it times out?'),
-    '#default_value' => variable_get('aws_sqs_poll_seconds', ''),
+    '#title' => t('How long can the fetchItem call wait before it times out? (seconds)'),
+    '#default_value' => variable_get('aws_sqs_waittimeseconds', ''),
     '#options' => $seconds,
     '#description' => t('This is important if you want to reduce the amount of polls to the AWS service. It is comparable with a blocking select call.'),
   );
-  
+
   $form['aws_sqs_enable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Send all Queues to the amazon queue system'),

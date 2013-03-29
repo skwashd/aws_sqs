@@ -22,6 +22,8 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
   protected $manager;
   protected $awsKey;
   protected $awsSecret;
+  protected $claimTimeout = 0;
+  protected $waitTimeSeconds = 0;
 
   const REGION_US_EAST_1      = 'us-east-1';
   const REGION_US_WEST_1      = 'us-west-1';
@@ -39,37 +41,56 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    *
    * @param string $region
    *   Region where you want to create the Queue
-   * 
+   *
    * @throws Exception
    */
-  public function __construct($name, $region = self::REGION_EU_WEST_1) {
+  public function __construct($name) {
     composer_manager_register_autoloader();
     $this->name = $name;
-    $this->awsKey = variable_get("aws_sqs_aws_key", "");
-    $this->awsSecret = variable_get("aws_sqs_aws_secret", "");
+    $options = self::getOptions($name);
+
+    $this->setWaitTimeSeconds($options['waitTimeSeconds']);
+
     // Check if the keys are there
-    if (empty($this->awsKey) || empty($this->awsSecret)) {
+    if (empty($options['key']) || empty($options['secret'])) {
       throw new Exception("AWS Credentials not found");
     }
-    // Initialize the objects
-    $this->manager = new Manager($this->awsKey, $this->awsSecret, "us-east-1");
-    $this->queue = new Queue();
 
-    // This is important to support blocking calls to the queue system
-    $waitTimeSeconds = variable_get("aws_sqs_poll_seconds", 0);
-    $this->queue->setReceiveMessageWaitTimeSeconds($waitTimeSeconds);
+    // Initialize the objects
+    $this->manager = new Manager($options['key'], $options['secret'], $options['region']);
+    $this->queue = new Queue();
 
     // And last but not least, give it a name
     $this->queue->setName($name);
   }
 
   /**
+   * Get the queue's options;
+   *
+   * @param type $name
+   * @return type
+   */
+  static function getOptions($name) {
+    $options = variable_get('aws_sqs_' . $name, array());
+    $defaults = variable_get('aws_sqs_default_queue', array()) + array(
+      'key' => variable_get('aws_sqs_aws_key', ''),
+      'secret' => variable_get('aws_sqs_aws_secret', ''),
+      'region' => variable_get('aws_sqs_region', self::REGION_EU_WEST_1),
+      'waitTimeSeconds' => variable_get('aws_sqs_waittimeseconds', 0),
+    );
+    $options += $defaults;
+
+    return $options;
+  }
+
+  /**
    * Send a "message to the AWS Queue.
    *
+   * Careful, you can only store data up to 64kb.
    * @param $data
    *   Can be of any type, mostly array or object. Will be stored
    *   serialized in the queue sytem.
-   * 
+   *
    * @return boolean
    *   True if it succesfully added the item, false if not.
    */
@@ -87,7 +108,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
 
   /**
    * Return the amount of items in the queue
-   * 
+   *
    * @return integer
    *   Approximate Number of messages in the aws queue
    */
@@ -109,6 +130,23 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     // Create our stub item
     $item = new stdClass();
 
+    // This is important to support blocking calls to the queue system
+    $waitTimeSeconds = $this->getWaitTimeSeconds();
+    $claimTimeout = $this->getClaimTimeout();
+    // if our given claimTimeout is smaller than the allowed waiting seconds
+    // set the waitTimeSeconds to this value. This is to avoid a long call when
+    // the worker that called claimItem only has a finite amount of time to wait
+    // for an item
+    // if $waitTimeSeconds is set to 0, it will never use the blocking
+    // logic (which is intended)
+    if ($claimTimeout < $waitTimeSeconds) {
+      $this->queue->setReceiveMessageWaitTimeSeconds($claimTimeout);
+    }
+    else {
+      $this->queue->setReceiveMessageWaitTimeSeconds($waitTimeSeconds);
+    }
+
+    // Fetch the queue item
     $message = $this->manager->receiveMessage($this->queue, $lease_time, true);
     // Return the value of the body if possible, if not, return false
     if ($item->data = unserialize($message->getBody())) {
@@ -156,7 +194,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
 
   /**
    * Create the Amazon Queue
-   * 
+   *
    * @param type $name
    */
   public function createQueue() {
@@ -165,5 +203,27 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
 
   public function deleteQueue() {
     $this->manager->deleteQueue($this->queue);
+  }
+
+  /**
+   * Gets the protected claimTimeout value
+   */
+  public function getClaimTimeout() {
+    return $this->claimTimeout;
+  }
+
+  /**
+   * Sets the protected claimTimeout value
+   */
+  public function setClaimTimeout($claimTimeout) {
+    $this->claimTimeout = $claimTimeout;
+  }
+
+  /**
+   * Gets the protected waitTimeSeconds value
+   */
+  public function getWaitTimeSeconds() {
+    $options =  self::getOptions($name);
+    return $options['waitTimeSeconds'];
   }
 }
