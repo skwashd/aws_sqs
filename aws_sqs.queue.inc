@@ -56,10 +56,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
 
     // Initialize the objects
     $this->manager = new Manager($options['key'], $options['secret'], $options['region']);
-    $this->queue = new Queue();
-
-    // And last but not least, give it a name
-    $this->queue->setName($name);
+    $this->queue = $this->manager->getQueueByName($name);
   }
 
   /**
@@ -116,7 +113,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     if($queue = $this->manager->loadQueueAttributes($this->queue)) {
       $this->queue = $queue;
     }
-    return $this->getApproximateNumberOfMessages();
+    return $this->queue->getApproximateNumberOfMessages();
   }
 
   /**
@@ -179,6 +176,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
   public function deleteItem($item) {
     // Create a new message object
     $message = new Message();
+    $message->setQueue($this->queue);
     $message->setBody($serialized_data);
     $message->setMessageId($item->item_id);
     if (!isset($item->item_handle)) {
@@ -187,7 +185,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     $message->setReceiptHandle($item->item_handle);
 
     // Do the real delete
-    $this->manager->deleteMessage($message);
+    return $this->manager->deleteMessage($message);
   }
 
   /**
