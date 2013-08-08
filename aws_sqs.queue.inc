@@ -91,7 +91,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    */
   public function createItem($data) {
     // Encapsulate our data
-    $serialized_data = serialize($data);
+    $serialized_data = $this->serialize($data);
 
     // Create a new message object
     $message = new Message();
@@ -144,7 +144,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     // Fetch the queue item
     $message = $this->manager->receiveMessage($this->queue, $lease_time, true);
     // Return the value of the body if possible, if not, return false
-    if ($item->data = unserialize($message->getBody())) {
+    if ($item->data = $this->unserialize($message->getBody())) {
       $item->item_id = $message->getMessageId();
       // Useful for when we need to delete the message. We cannot delete
       // messages using the item_id
@@ -162,7 +162,7 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    */
   public function releaseItem($item) {
     // Encapsulate our data
-    $serialized_data = serialize($data);
+    $serialized_data = $this->serialize($data);
 
     // Create a new message object
     $message = new Message();
@@ -221,5 +221,19 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
   public function getWaitTimeSeconds() {
     $options =  self::getOptions($this->name);
     return $options['waitTimeSeconds'];
+  }
+
+  /**
+   * Serializes data before it is sent to SQS.
+   */
+  protected function serialize($data) {
+    return serialize($data);
+  }
+
+  /**
+   * Unserializes data after it comes back from SQS.
+   */
+  protected function unserialize($data) {
+    return unserialize($data);
   }
 }
