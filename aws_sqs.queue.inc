@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * Definition of AwsSqsQueue.
  */
 
@@ -173,6 +174,15 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     return $this->manager->sendMessage($this->queue, $message);
   }
 
+  /**
+   * Deletes an item from the queue
+   *
+   * @param Message $item
+   *   The item to be deleted.
+   *
+   * @reutrn bool
+   *   Returns TRUE if the item was successfully deleted.
+   */
   public function deleteItem($item) {
     // Create a new message object
     $message = new Message();
@@ -197,6 +207,9 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     $this->manager->createQueue($this->queue);
   }
 
+  /**
+   * Deletes a SQS queue.
+   */
   public function deleteQueue() {
     $this->manager->deleteQueue($this->queue);
   }

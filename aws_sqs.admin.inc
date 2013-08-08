@@ -1,7 +1,14 @@
 <?php
+/**
+ * @file
+ * AWS SQS module admin functions.
+ */
 
+/**
+ * Menu callback for admin form.
+ */
 function aws_sqs_settings_form() {
-   $form['aws_sqs_aws_key'] = array(
+  $form['aws_sqs_aws_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Amazon Web Services Key'),
     '#default_value' => variable_get('aws_sqs_aws_key', ''),
@@ -35,6 +42,9 @@ function aws_sqs_settings_form() {
   return system_settings_form($form);
 }
 
+/**
+ * Submit callback for admin settings form.
+ */
 function aws_sqs_settings_form_submit($form, &$form_state) {
   if (!empty($form_state['values']['aws_sqs_enable'])) {
     variable_set('queue_default_class', 'awsSqsQueue');

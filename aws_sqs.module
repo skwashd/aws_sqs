@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * @file
+ * AWS SQS module functions.
+ */
+
+/**
+ * Implements hook_menu().
+ */
 function aws_sqs_menu() {
   $items = array();
 
