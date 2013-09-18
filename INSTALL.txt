@@ -13,7 +13,7 @@ check the checkbox in the admin page but this is not required.
 See code snippet below on how to use this module
 
 // initialize the queue
-$queue = new awsSqsQueue('aws_test', 'us-east-2');
+$queue = new AwsSqsQueue('aws_test', 'us-east-2');
 // Create the queue
 $queue->createQueue();
 // Get some data

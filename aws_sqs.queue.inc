@@ -5,27 +5,42 @@
  * Definition of AwsSqsQueue.
  */
 
-use AmazonSQS\Manager;
-use AmazonSQS\Model\Queue;
-use AmazonSQS\Model\Message;
+/**
+ * Use SQS Client provided by AWS SDK PHP version 2.
+ *
+ * More info:
+ *
+ *  http://aws.amazon.com/php
+ *  https://github.com/aws/aws-sdk-php
+ *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/
+ *  http://docs.aws.amazon.com/aws-sdk-php-2/guide/latest/service-sqs.html
+ *
+ * Responses to HTTP requests made through SqsClient are returned as Guzzle
+ * objects. More info about Guzzle here:
+ *
+ *  http://guzzlephp.org/
+ */
+use Aws\Sqs\SqsClient;
 
 /**
  * Amazon queue.
  */
-class awsSqsQueue implements DrupalReliableQueueInterface {
+class AwsSqsQueue implements DrupalReliableQueueInterface {
   /**
    * The name of the queue this instance is working with.
    *
    * @var string
    */
-  protected $name;
-  protected $queue;
-  protected $manager;
-  protected $awsKey;
-  protected $awsSecret;
-  protected $claimTimeout = 0;
-  protected $waitTimeSeconds = 0;
+  private $awsKey;          // This is the key that gets sent to AWS with your requests.
+  private $awsSecret;       // Your secret. (This one doesn't get sent.)
+  private $awsRegion;       // Location of AWS data center. (See constants below.)
+  private $claimTimeout;
+  private $client;          // SqsClient provided by AWS as interface to SQS.
+  private $name;            // Queue name.
+  private $queueUrl;        // Uniqueue identifier for queue.
+  private $waitTimeSeconds;
 
+  // Constants for AWS regions.
   const REGION_US_EAST_1      = 'us-east-1';
   const REGION_US_WEST_1      = 'us-west-1';
   const REGION_US_WEST_2      = 'us-west-2';
@@ -38,7 +53,9 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    * Initialize the Queue Class
    *
    * @param string $name
-   *   Name of the queue, will also be this name in Amazon
+   *   Name of the queue, will also be this name in Amazon. You will be able to
+   *   see it in the AWS console here:
+   *   https://console.aws.amazon.com/sqs
    *
    * @param string $region
    *   Region where you want to create the Queue
@@ -47,17 +64,27 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    */
   public function __construct($name) {
     composer_manager_register_autoloader();
-    $this->name = $name;
-    $options = self::getOptions($name);
 
-    // Check if the keys are there
-    if (empty($options['key']) || empty($options['secret'])) {
+    // Set up the object.
+    $this->setName($name);
+    $this->setAwsKey();
+    $this->setAwsSecret();
+    $this->setAwsRegion();
+    $this->setClient();
+
+    // Check if keys are available.
+    if (!$this->getAwsKey() || !$this->getAwsSecret()) {
       throw new Exception("AWS Credentials not found");
     }
+  }
 
-    // Initialize the objects
-    $this->manager = new Manager($options['key'], $options['secret'], $options['region']);
-    $this->queue = $this->manager->getQueueByName($name);
+  /**
+   * Returns the queue object for a given name.
+   *
+   * @return object
+   */
+  static public function get($name) {
+    return new AwsSqsQueue($name);
   }
 
   /**
@@ -65,70 +92,111 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
    *
    * @param type $name
    * @return type
+   *
+   * TODO What do these two settings do? Can we get rid of them or move them
+   * to getters/setters?
    */
-  static function getOptions($name) {
+  static private function getOptions($name) {
     $options = variable_get('aws_sqs_' . $name, array());
-    $defaults = variable_get('aws_sqs_default_queue', array()) + array(
-      'key' => variable_get('aws_sqs_aws_key', ''),
-      'secret' => variable_get('aws_sqs_aws_secret', ''),
-      'region' => variable_get('aws_sqs_region', self::REGION_EU_WEST_1),
-      'waitTimeSeconds' => variable_get('aws_sqs_waittimeseconds', 0),
-    );
+    $defaults = variable_get('aws_sqs_default_queue', array());
     $options += $defaults;
 
     return $options;
   }
 
   /**
-   * Send a "message to the AWS Queue.
+   * Send an item to the AWS Queue.
    *
    * Careful, you can only store data up to 64kb.
+   *  TODO Add link to documentation here. I think this info is out of date.
+   *    I believe now you can store more. But you get charged as if it's an additional
+   *    request.
+   *
+   * Invokes SqsClient::sendMessage().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_sendMessage
+   *
    * @param $data
    *   Can be of any type, mostly array or object. Will be stored
-   *   serialized in the queue sytem.
+   *   serialized in the queue sytem. If an item retreived from the queue is
+   *   being re-submitted to the queue (if is_object($item) && $item->data &&
+   *   item->item_id), only $item->data will be stored.
    *
-   * @return boolean
-   *   True if it succesfully added the item, false if not.
+   * @return bool
    */
   public function createItem($data) {
     // Encapsulate our data
     $serialized_data = $this->serialize($data);
 
-    // Create a new message object
-    $message = new Message();
-    $message->setBody($serialized_data);
+    // Check to see if someone is trying to save an item originally retrieved
+    // from the queue. If so, this really should have been submitted as
+    // $item->data, not $item. Reformat this so we don't save metadata or
+    // confuse item_ids downstream.
+    if (is_object($data) && property_exists($data, 'data') && property_exists($data, 'item_id')) {
+      $text = t('Do not re-queue whole items retrieved from the SQS queue. This included metadata, like the item_id. Pass $item->data to createItem() as a parameter, rather than passing the entire $item. $item->data is being saved. The rest is being ignored.');
+      $data = $data->data;
+      watchdog('aws_sqs', $text, array(), WATCHDOG_ERROR);
+    }
 
-    // Returns true if it succeeded
-    return $this->manager->sendMessage($this->queue, $message);
+    // TODO Add a check here for message size? Log it?
+
+    // Create a new message object
+    $result = $this->client->sendMessage(array(
+      'QueueUrl'    => $this->queueUrl,
+      'MessageBody' => $serialized_data,
+    ));
+
+    return (bool) $result;
   }
 
   /**
    * Return the amount of items in the queue
    *
+   * Invokes SqsClient::getQueueAttributes().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_getQueueAttributes
+   *
    * @return integer
-   *   Approximate Number of messages in the aws queue
+   *   Approximate Number of messages in the aws queue. Returns FALSE if SQS is
+   *   not available.
    */
   public function numberOfItems() {
-    // Check if this operation succeeds, and if so, assign it to the queue
-    // object from this class
-    if($queue = $this->manager->loadQueueAttributes($this->queue)) {
-      $this->queue = $queue;
+    // Request attributes of queue from AWS. The response is returned as a Guzzle
+    // resource model object:
+    // http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Guzzle.Service.Resource.Model.html
+    $args = array(
+      'QueueUrl' => $this->queueUrl,
+      'AttributeNames' => array('ApproximateNumberOfMessages'),
+    );
+    $response = $this->client->getQueueAttributes($args);
+
+    $attributes = $response->get('Attributes');
+    if (!empty($attributes['ApproximateNumberOfMessages'])) {
+      $return = $attributes['ApproximateNumberOfMessages'];
     }
-    return $this->queue->getApproximateNumberOfMessages();
+    else {
+      $return = FALSE;
+    }
+
+    return $return;
   }
 
   /**
-   * Fetch an item
-   * @param type $lease_time
-   * @return boolean
+   * Fetch a single item from the AWS SQS queue.
+   *
+   * Invokes SqsClient::receiveMessage().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_receiveMessage
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/guide/latest/service-sqs.html#receiving-messages
+   *
+   * @param int $lease_time
+   *   Drupal's "lease time" is the same as AWS's "Visibility Timeout". It's the
+   *   amount of time for which an item is being claimed. If a user passes in a
+   *   value for $lease_time here, override the default claimTimeout.
+   *
+   * @return array
    */
-  public function claimItem($lease_time = 30) {
-    // Create our stub item
-    $item = new stdClass();
-
+  public function claimItem($lease_time = 0) {
     // This is important to support blocking calls to the queue system
     $waitTimeSeconds = $this->getWaitTimeSeconds();
-    $claimTimeout = $this->getClaimTimeout();
+    $claimTimeout = ($lease_time) ? $lease_time : $this->getClaimTimeout();
     // if our given claimTimeout is smaller than the allowed waiting seconds
     // set the waitTimeSeconds to this value. This is to avoid a long call when
     // the worker that called claimItem only has a finite amount of time to wait
@@ -136,117 +204,238 @@ class awsSqsQueue implements DrupalReliableQueueInterface {
     // if $waitTimeSeconds is set to 0, it will never use the blocking
     // logic (which is intended)
     if ($claimTimeout < $waitTimeSeconds) {
-      $this->queue->setReceiveMessageWaitTimeSeconds($claimTimeout);
-    }
-    else {
-      $this->queue->setReceiveMessageWaitTimeSeconds($waitTimeSeconds);
+      $waitTimeSeconds = $claimTimeout;
     }
 
-    // Fetch the queue item
-    $message = $this->manager->receiveMessage($this->queue, $lease_time, true);
-    // Return the value of the body if possible, if not, return false
-    if ($item->data = $this->unserialize($message->getBody())) {
-      $item->item_id = $message->getMessageId();
-      // Useful for when we need to delete the message. We cannot delete
-      // messages using the item_id
-      $item->item_handle = $message->getReceiptHandle();
-      return $item;
-    }
+    // Fetch the queue item.
+    // TODO See usage of $lease_time. Should we use lease_time or other timeout below?
+    // $message = $this->manager->receiveMessage($this->queue, $lease_time, true);
 
-    return FALSE;
+    // Retrieve item from AWS. See documentation about method and response here:
+    $response = $this->client->receiveMessage(array(
+      'QueueUrl' => $this->queueUrl,
+      'MaxNumberOfMessages' => 1,
+      'VisibilityTimeout' => $claimTimeout,
+      'WaitTimeSeconds' => $waitTimeSeconds,
+    ));
+
+    // TODO Add error handling, in case service becomes unavailable.
+
+    $item = new stdClass();
+    $message = $response->getPath('Messages/*');
+    $item->data = $this->unserialize($message['Body']);
+    $item->item_id = $message['ReceiptHandle'];
+
+    return $item;
   }
 
   /**
-   * We add it to the queue again as amazon does not support a release
+   * Release claim on item in the queue.
+   *
+   * In AWS lingo, you release a claim on an item in the queue by "terminating
+   * its visibility timeout". (Similarly, you can extend the amount of time for
+   * which an item is claimed by extending its visibility timeout. The maximum
+   * visibility timeout for any item in any queue is 12 hours, including all
+   * extensions.)
+   *
+   * Invokes SqsClient::ChangeMessageVisibility().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_changeMessageVisibility
+   *  http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/AboutVT.html
    *
    * @param object $item
+   *  Item retrieved from queue. This property is required: $item->item_id.
+   *
+   * @return bool
+   *   TRUE for success.
    */
   public function releaseItem($item) {
-    // Encapsulate our data
-    $serialized_data = $this->serialize($data);
+    $result = $this->client->changeMessageVisibility(array(
+      'QueueUrl' => $this->queueUrl,
+      'ReceiptHandle' => $item->item_id,
+      'VisibilityTimeout' => 0,
+    ));
 
-    // Create a new message object
-    $message = new Message();
-    $message->setBody($serialized_data);
-    $message->setMessageId($item->item_id);
-
-    // Returns true if it succeeded
-    return $this->manager->sendMessage($this->queue, $message);
+    // If $result is the type of object we expect, everything went okay.
+    // (Typically SqsClient would have thrown an error before here if anything
+    // went wrong. This check is really just for good measure.)
+    return self::isGuzzleServiceResourceModel($result);
   }
 
   /**
-   * Deletes an item from the queue
+   * Deletes an item from the queue with deleteMessage method.
+   *
+   * Invokes SqsClient::deleteMessage().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_deleteMessage
    *
    * @param Message $item
    *   The item to be deleted.
    *
-   * @reutrn bool
-   *   Returns TRUE if the item was successfully deleted.
+   * @return
+   *  DrupalQueueInterface::deleteItem() returns nothing. Don't return anything here.
    */
   public function deleteItem($item) {
-    // Create a new message object
-    $message = new Message();
-    $message->setQueue($this->queue);
-    $message->setBody($serialized_data);
-    $message->setMessageId($item->item_id);
-    if (!isset($item->item_handle)) {
+    if (!isset($item->item_id)) {
       throw new Exception("An item that needs to be deleted requires a handle ID");
     }
-    $message->setReceiptHandle($item->item_handle);
 
-    // Do the real delete
-    return $this->manager->deleteMessage($message);
+    $result = $this->client->deleteMessage(array(
+      'QueueUrl' => $this->queueUrl,
+      'ReceiptHandle' => $item->item_id,
+    ));
   }
 
   /**
-   * Create the Amazon Queue
+   * Create the Amazon Queue.
    *
-   * @param type $name
+   * Store queueUrl when queue is created. This is the queue's unique
+   * identifier.
+   *
+   * Invokes SqsClient::createQueue().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_createQueue
+   *
+   * @return
+   *  DrupalQueueInterface::createQueue() returns nothing. Don't return anything here.
    */
   public function createQueue() {
-    $this->manager->createQueue($this->queue);
+    $result = $this->client->createQueue(array('QueueName' => $this->name));
+    $queueUrl = $result->get('QueueUrl');
+    $this->setQueueUrl($queueUrl);
   }
 
   /**
-   * Deletes a SQS queue.
+   * Deletes an SQS queue.
+   *
+   * Invokes SqsClient::deleteQueue().
+   *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_deleteQueue
+   *
+   * @return
+   *  DrupalQueueInterface::deleteQueue() returns nothing. Don't return anything here.
    */
   public function deleteQueue() {
-    $this->manager->deleteQueue($this->queue);
+    $result = $this->client->deleteQueue(array('QueueUrl' => $this->queueUrl));
   }
 
   /**
-   * Gets the protected claimTimeout value
+   * Determine whether an object is an instance of
+   * Guzzle\Service\Resource\Model.
+   *
+   * @param obj $object
+   *
+   * @return bool
    */
-  public function getClaimTimeout() {
-    return $this->claimTimeout;
+  static private function isGuzzleServiceResourceModel($object) {
+    return (is_object($object) && get_class($object) == 'Guzzle\Service\Resource\Model') ? TRUE : FALSE;
   }
 
   /**
-   * Sets the protected claimTimeout value
+   * PHP's native serialize() isn't very portable. This method enables people to
+   * extend this class and support other serialization formats (so that
+   * something other than PHP can potentially process the data in the queue, as
+   * per discussion here: https://drupal.org/node/1956190).
    */
-  public function setClaimTimeout($claimTimeout) {
-    $this->claimTimeout = $claimTimeout;
-  }
-
-  /**
-   * Gets the protected waitTimeSeconds value
-   */
-  public function getWaitTimeSeconds() {
-    $options =  self::getOptions($this->name);
-    return $options['waitTimeSeconds'];
-  }
-
-  /**
-   * Serializes data before it is sent to SQS.
-   */
-  protected function serialize($data) {
+  protected static function serialize($data) {
     return serialize($data);
   }
 
   /**
-   * Unserializes data after it comes back from SQS.
+   * PHP's native serialize() isn't very portable. This method enables people to
+   * extend this class and support other serialization formats (so that
+   * something other than PHP can potentially process the data in the queue, as
+   * per discussion here: https://drupal.org/node/1956190).
    */
-  protected function unserialize($data) {
-    return unserialize($data);
+  protected static function unserialize($data) {
+    return serialize($data);
+  }
+
+  /*******************************************************
+   * Getters and setters
+   *******************************************************/
+
+  private function getAwsKey() {
+    if (!isset($this->awsKey)) $this->setAwsKey();
+    return $this->awsKey;
+  }
+
+  private function setAwsKey() {
+    $this->awsKey = variable_get('aws_sqs_aws_key', '');
+  }
+
+  private function getAwsSecret() {
+    if (!isset($this->awsSecret)) $this->setAwsSecret();
+    return $this->awsSecret;
+  }
+
+  private function setAwsSecret() {
+    $this->awsSecret = variable_get('aws_sqs_aws_secret', '');
+  }
+
+  private function getAwsRegion() {
+    if (!isset($this->awsRegion)) $this->setAwsRegion();
+    return $this->awsRegion;
+  }
+
+  private function setAwsRegion() {
+    $this->awsRegion = variable_get('aws_sqs_region', self::REGION_EU_WEST_1);
+  }
+
+  private function getClaimTimeout() {
+    if (!isset($this->claimTimeout)) $this->setClaimTimeout();
+    return $this->claimTimeout;
+  }
+
+  private function setClaimTimeout() {
+    $this->claimTimeout = variable_get('aws_sqs_claimtimeout', 60);
+  }
+
+  private function getClient() {
+    if (!isset($this->client)) $this->setClient();
+    return $this->client;
+  }
+
+  private function setClient() {
+    $client = SqsClient::factory(array(
+      'key'    => $this->getAwsKey(),
+      'secret' => $this->getAwsSecret(),
+      'region' => $this->getAwsRegion(),
+    ));
+    $this->client = $client;
+  }
+
+  /**
+   * $name is a required, user-defined param in __construct. It is set there.
+   */
+  private function getName() {
+    return $this->name;
+  }
+
+  private function setName($name) {
+    $this->name = $name;
+  }
+
+  private function getQueueUrl() {
+    if (!isset($this->queueUrl)) {
+      $text = t("You have to create a queue before you can get its URL. Use createQueue().");
+      watchdog('aws_sqs', $text, array(), WATCHDOG_WARNING);
+      return FALSE;
+    }
+    else {
+      return $this->queueUrl;
+    }
+  }
+
+  /**
+   * @see createQueue().
+   */
+  private function setQueueUrl($queueUrl) {
+    $this->queueUrl = $queueUrl;
+  }
+
+  private function getWaitTimeSeconds() {
+    if (!isset($this->waitTimeSeconds)) $this->setWaitTimeSeconds();
+    return $this->waitTimeSeconds;
+  }
+
+  private function setWaitTimeSeconds() {
+    $this->waitTimeSeconds = variable_get('aws_sqs_waittimeseconds', 1);
   }
 }
