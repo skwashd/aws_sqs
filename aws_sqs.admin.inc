@@ -40,7 +40,7 @@ function aws_sqs_settings_form() {
   $form['aws_sqs_claimtimeout'] = array(
     '#type' => 'textfield',
     '#title' => t("Claim Timeout / Visibility Timeout"),
-    '#default_value' => variable_get('aws_sqs_waittimeseconds', 60),
+    '#default_value' => variable_get('aws_sqs_claimtimeout', 60),
     '#size' => 15,
     '#description' => t("When an item is claimed from the queue by a worker, how long should the item be hidden from other workers (seconds)? Note: If the item is not deleted before the end of this time, it will become visible to other workers and available to be claimed again. Note also: 12 hours (43,200 seconds) is the maximum amount of time for which an item can be claimed. !more", array('!more' => l('Read more about visibility timeouts here.', 'http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/AboutVT.html'))),
   );
