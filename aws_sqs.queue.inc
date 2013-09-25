@@ -192,7 +192,11 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    *   amount of time for which an item is being claimed. If a user passes in a
    *   value for $lease_time here, override the default claimTimeout.
    *
-   * @return array
+   * @return
+   *   On success we return an item object. If the queue is unable to claim an
+   *   item it returns false. This implies a best effort to retrieve an item
+   *   and either the queue is empty or there is some other non-recoverable
+   *   problem.
    */
   public function claimItem($lease_time = 0) {
     // This is important to support blocking calls to the queue system
@@ -227,7 +231,11 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     $item->data = $this->unserialize($message['Body']);
     $item->item_id = $message['ReceiptHandle'];
 
-    return $item;
+    if (!empty($item->item_id)) {
+      return $item;
+    }
+
+    return FALSE;
   }
 
   /**
