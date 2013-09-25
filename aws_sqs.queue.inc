@@ -93,7 +93,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * @param type $name
    * @return type
    *
-   * TODO What do these two settings do? Can we get rid of them or move them
+   * @todo What do these two settings do? Can we get rid of them or move them
    * to getters/setters?
    */
   static private function getOptions($name) {
@@ -108,7 +108,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * Send an item to the AWS Queue.
    *
    * Careful, you can only store data up to 64kb.
-   *  TODO Add link to documentation here. I think this info is out of date.
+   *  @todo Add link to documentation here. I think this info is out of date.
    *    I believe now you can store more. But you get charged as if it's an additional
    *    request.
    *
@@ -124,6 +124,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * @return bool
    */
   public function createItem($data) {
+
     // Encapsulate our data
     $serialized_data = $this->serialize($data);
 
@@ -137,7 +138,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
       watchdog('aws_sqs', $text, array(), WATCHDOG_ERROR);
     }
 
-    // TODO Add a check here for message size? Log it?
+    // @todo Add a check here for message size? Log it?
 
     // Create a new message object
     $result = $this->client->sendMessage(array(
@@ -208,7 +209,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     }
 
     // Fetch the queue item.
-    // TODO See usage of $lease_time. Should we use lease_time or other timeout below?
+    // @todo See usage of $lease_time. Should we use lease_time or other timeout below?
     // $message = $this->manager->receiveMessage($this->queue, $lease_time, true);
 
     // Retrieve item from AWS. See documentation about method and response here:
@@ -219,7 +220,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
       'WaitTimeSeconds' => $waitTimeSeconds,
     ));
 
-    // TODO Add error handling, in case service becomes unavailable.
+    // @todo Add error handling, in case service becomes unavailable.
 
     $item = new stdClass();
     $message = $response->getPath('Messages/*');
