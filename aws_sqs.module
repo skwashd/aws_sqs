@@ -19,6 +19,7 @@ function aws_sqs_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'aws_sqs.admin.inc',
   );
+
   return $items;
 }
 
