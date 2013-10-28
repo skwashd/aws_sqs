@@ -1,0 +1,5 @@
+services:
+  aws_sqs_event_subscriber:
+    class: Drupal\aws_sqs\EventSubscriber\AwsSqsSubscriber
+    tags:
+      - {name: event_subscriber}

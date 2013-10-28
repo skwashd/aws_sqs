@@ -3,6 +3,7 @@
 /**
  * @file
  * Definition of AwsSqsQueue.
+ * Contains \Drupal\aws_sqs\Queue\AwsSqsQueue.
  */
 
 /**
@@ -20,12 +21,18 @@
  *
  *  http://guzzlephp.org/
  */
+
+namespace Drupal\aws_sqs\Queue;
+
 use Aws\Sqs\SqsClient;
+use Drupal\Core\Queue\ReliableQueueInterface;
+
 
 /**
  * Amazon queue.
  */
-class AwsSqsQueue implements DrupalReliableQueueInterface {
+class AwsSqsQueue implements ReliableQueueInterface {
+
   /**
    * The name of the queue this instance is working with.
    *
@@ -39,6 +46,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   private $name;            // Queue name.
   private $queueUrl;        // Uniqueue identifier for queue.
   private $waitTimeSeconds;
+  private $config;
 
   // Constants for AWS regions.
   const REGION_US_EAST_1      = 'us-east-1';
@@ -63,7 +71,8 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * @throws Exception
    */
   public function __construct($name) {
-    composer_manager_register_autoloader();
+
+    $this->config = \Drupal::config('aws_sqs.settings');
 
     // Set up the object.
     $this->setName($name);
@@ -74,7 +83,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
 
     // Check if keys are available.
     if (!$this->getAwsKey() || !$this->getAwsSecret()) {
-      throw new Exception("AWS Credentials not found");
+      throw new \Exception("AWS Credentials not found");
     }
   }
 
@@ -97,8 +106,9 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * to getters/setters?
    */
   static private function getOptions($name) {
-    $options = variable_get('aws_sqs_' . $name, array());
-    $defaults = variable_get('aws_sqs_default_queue', array());
+
+    $options = $this->config->get('aws_sqs_' . $name, array());
+    $defaults = $this->config->get('aws_sqs_default_queue', array());
     $options += $defaults;
 
     return $options;
@@ -226,7 +236,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
 
     // @todo Add error handling, in case service becomes unavailable.
 
-    $item = new stdClass();
+    $item = new \stdClass();
     $message = $response->getPath('Messages/*');
     $item->data = $this->unserialize($message['Body']);
     $item->item_id = $message['ReceiptHandle'];
@@ -284,7 +294,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    */
   public function deleteItem($item) {
     if (!isset($item->item_id)) {
-      throw new Exception("An item that needs to be deleted requires a handle ID");
+      throw new \Exception("An item that needs to be deleted requires a handle ID");
     }
 
     $result = $this->client->deleteMessage(array(
@@ -366,7 +376,8 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setAwsKey() {
-    $this->awsKey = variable_get('aws_sqs_aws_key', '');
+
+    $this->awsKey = $this->config->get('aws_sqs_aws_key');
   }
 
   private function getAwsSecret() {
@@ -375,7 +386,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setAwsSecret() {
-    $this->awsSecret = variable_get('aws_sqs_aws_secret', '');
+    $this->awsSecret = $this->config->get('aws_sqs_aws_secret');
   }
 
   private function getAwsRegion() {
@@ -384,7 +395,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setAwsRegion() {
-    $this->awsRegion = variable_get('aws_sqs_region', self::REGION_EU_WEST_1);
+    $this->awsRegion = $this->config->get('aws_sqs_region', self::REGION_EU_WEST_1);
   }
 
   private function getClaimTimeout() {
@@ -393,7 +404,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setClaimTimeout() {
-    $this->claimTimeout = variable_get('aws_sqs_claimtimeout', 60);
+    $this->claimTimeout = $this->config->get('aws_sqs_claimtimeout');
   }
 
   private function getClient() {
@@ -445,6 +456,6 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setWaitTimeSeconds() {
-    $this->waitTimeSeconds = variable_get('aws_sqs_waittimeseconds', 1);
+    $this->waitTimeSeconds = $this->config->get('aws_sqs_waittimeseconds');
   }
 }
