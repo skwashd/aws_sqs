@@ -3,5 +3,6 @@ description: Defines a Queue Interface for Amazon SQS
 package: Other
 core: 8.x
 type: module
-
+dependencies:
+  - composer_manager
 configure : admin/config/system/aws-queue
