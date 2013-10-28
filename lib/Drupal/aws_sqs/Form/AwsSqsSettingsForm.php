@@ -17,6 +17,9 @@ class AwsSqsSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, array &$form_state) {
+    global $conf;
+    $variables = variable_initialize($conf);
+
     $config = $this->config('aws_sqs.settings');
 
     $form['credentials'] = array(
@@ -90,18 +93,20 @@ class AwsSqsSettingsForm extends ConfigFormBase {
       '#description' => t('AWS Region where to store the Queue.'),
     );
 
+
+
+    // in theory this should work
+    // $default_queue = settings()->get('queue_default', 'queue.database');
+    if (isset($variables['queue_default'])) {
+      $default_queue = $variables['queue_default'];
+    }
+    else {
+      $default_queue = 'queue.database';
+    }
+
     $form['queue_default_class'] = array(
-      '#type' => 'select',
       '#title' => t('Default Queue'),
-      '#default_value' => $config->get('queue_default_class', 'SystemQueue'),
-      '#description' => t(
-        "Set the default queue class. If you select AwsSqsQueue here, AWS SQS will be used anytime a queue is
-        instantiated via DrupalQueue:get(\$name)."),
-      '#options' => array(
-        'AwsSqsQueue' => 'AwsSqsQueue',
-        'SystemQueue' => 'SystemQueue',
-        'MemoryQueue' => 'MemoryQueue',
-      ),
+      '#markup' => t("The default queue class is <strong>!default_queue</strong>.", array('!default_queue' => $default_queue)),
     );
 
     return parent::buildForm($form, $form_state);
@@ -117,6 +122,7 @@ class AwsSqsSettingsForm extends ConfigFormBase {
     $config->set('aws_sqs_waittimeseconds', $form_state['values']['aws_sqs_waittimeseconds']);
     $config->set('aws_sqs_claimtimeout', $form_state['values']['aws_sqs_claimtimeout']);
     $config->set('aws_sqs_region', $form_state['values']['aws_sqs_region']);
+
     $config->save();
     parent::submitForm($form, $form_state);
 

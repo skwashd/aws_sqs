@@ -3,3 +3,5 @@ services:
     class: Drupal\aws_sqs\EventSubscriber\AwsSqsSubscriber
     tags:
       - {name: event_subscriber}
+  queue.awssqs:
+    class: Drupal\aws_sqs\Queue\QueueAwsSqsFactory
