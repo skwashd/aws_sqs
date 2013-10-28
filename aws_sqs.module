@@ -8,7 +8,7 @@
 /**
  * Implements hook_menu().
  */
-function aws_sqs_menu() {
+/*function aws_sqs_menu() {
   $items = array();
 
   $items['admin/config/system/aws-queue'] = array(
@@ -21,7 +21,21 @@ function aws_sqs_menu() {
   );
 
   return $items;
+}*/
+
+/**
+ * Implements hook_menu().
+ */
+function aws_sqs_menu() {
+  $items['admin/config/system/aws-queue'] = array(
+    'route_name' => 'awssqs.settings',
+    'title' => 'Amazon SQS Settings',
+    'description' => 'Configure your Amazon SQS Settings.',
+  );
+
+  return $items;
 }
+
 
 /**
  * Implements hook_queue_info().

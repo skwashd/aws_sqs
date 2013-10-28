@@ -1,0 +1,7 @@
+awssqs.settings:
+  path: '/admin/config/system/aws-queue'
+  defaults:
+    _form: '\Drupal\awssqs\Form\AwssqsSettingsForm'
+    _title: 'AWS Simple Queue System'
+  requirements:
+    _permission: 'administer aws sqs'
