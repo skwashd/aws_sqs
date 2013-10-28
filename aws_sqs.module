@@ -5,8 +5,6 @@
  * AWS SQS module functions.
  */
 
-require_once 'vendor/autoload.php';
-
 /**
  * Implements hook_menu().
  */
@@ -64,6 +62,6 @@ function aws_sqs_queue_info() {
   $queue->createItem($item);
   // Fetch the item from the queue
   $item = $queue->claimItem();
-  //$queue->deleteItem($item);
-  drush_print_r($item);
+  $queue->deleteItem($item);
+  //drush_print_r($item);
 }*/

@@ -1,7 +1,6 @@
 <?php
 namespace Drupal\aws_sqs\EventSubscriber;
 
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -9,7 +8,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class AwsSqsSubscriber implements EventSubscriberInterface {
 
   public function addAutoload(GetResponseEvent $event) {
-    require_once dirname(dirname(dirname(dirname(__DIR__)))) . '/vendor/autoload.php';
+    // If we did not have composer_manager, we'd have to do it ourselves here
   }
 
   /**
@@ -19,6 +18,5 @@ class AwsSqsSubscriber implements EventSubscriberInterface {
     $events[KernelEvents::REQUEST][] = array('addAutoload');
     return $events;
   }
-
 }
 ?>

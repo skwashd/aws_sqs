@@ -74,6 +74,9 @@ class AwsSqsQueue implements ReliableQueueInterface {
 
     $this->config = \Drupal::config('aws_sqs.settings');
 
+    // Add it again in case it did not load in time.
+    composer_manager_register_autoloader();
+
     // Set up the object.
     $this->setName($name);
     $this->setAwsKey();
