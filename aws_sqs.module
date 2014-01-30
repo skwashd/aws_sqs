@@ -21,34 +21,3 @@ function aws_sqs_menu() {
   );
   return $items;
 }
-
-/**
- * Implements hook_queue_info().
- *
- * This hook is used by queue_ui (and other modules)
- * to discover non SystemQueue based queues.
- */
-function aws_sqs_queue_info() {
-  // Import variables from settings.php
-  global $conf;
-
-  $queues = array();
-
-  $blacklist = array(
-    'aws_sqs_default_queue',
-    'aws_sqs_aws_key',
-    'aws_sqs_aws_secret',
-    'aws_sqs_region',
-    'aws_sqs_waittimeseconds',
-    'aws_sqs_enable',
-  );
-
-  foreach(variable_initialize($conf) as $key => $value) {
-    if (substr($key, 0, 7) == 'aws_sqs' && !in_array($key, $blacklist)) {
-      $name = substr($key, 8);
-      $queues[$name] = array('title' => str_replace('_', ' ', $name));
-    }
-  }
-
-  return $queues;
-}
