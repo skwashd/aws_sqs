@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for Amazon SQS Queue Interface.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function aws_sqs_uninstall() {
+  // Delete persistent variables.
+  db_delete('variable')
+    ->condition('name', db_like('aws_sqs_') . '%', 'LIKE')
+    ->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
+}
