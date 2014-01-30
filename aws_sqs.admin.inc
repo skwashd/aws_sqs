@@ -47,8 +47,8 @@ function aws_sqs_settings_form() {
 
   $form['aws_sqs_region'] = array(
     '#type' => 'select',
-    '#title' => t('Secret Access Key'),
-    '#default_value' => variable_get('aws_sqs_aws_secret', ''),
+    '#title' => t('Region'),
+    '#default_value' => variable_get('aws_sqs_region', ''),
     '#options' => array(
       'us-east-1' => 'us-east-1',
       'us-west-1' => 'us-west-1',
@@ -59,7 +59,7 @@ function aws_sqs_settings_form() {
       'sa-east-1' => 'sa-east-1',
     ),
     '#required' => TRUE,
-    '#description' => t('Amazon Web Services Secret Key.'),
+    '#description' => t('Amazon Web Services Region.'),
   );
 
   $form['queue_default_class'] = array(
