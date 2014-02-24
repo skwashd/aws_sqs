@@ -72,6 +72,11 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     $this->setAwsRegion();
     $this->setClient();
 
+    // Drush queue-list and queue-run commands expect queue to exist without
+    // explicitly calling createQueue method, so we go ahead and create it here.
+    // (see drush_queue_run and drush_queue_list functions in queue.drush.inc).
+    $this->createQueue();
+
     // Check if keys are available.
     if (!$this->getAwsKey() || !$this->getAwsSecret()) {
       throw new Exception("AWS Credentials not found");
@@ -423,7 +428,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
 
   private function getQueueUrl() {
     if (!isset($this->queueUrl)) {
-      $text = t("You have to create a queue before you can get its URL. Use createQueue().");
+      $text = t("You have to create a queue before you can get its URL. Use createQueue(). See AwsSqsQueue::createQueue().");
       watchdog('aws_sqs', $text, array(), WATCHDOG_WARNING);
       return FALSE;
     }
