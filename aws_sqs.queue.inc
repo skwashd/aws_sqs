@@ -439,7 +439,8 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setName($name) {
-    $this->name = $name;
+    $prefix = (string) variable_get('aws_sqs_queue_name_prefix', '');
+    $this->name = $prefix . $name;
   }
 
   public function getQueueUrl() {

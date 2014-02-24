@@ -65,7 +65,7 @@ function aws_sqs_settings_form() {
       'sa-east-1' => 'sa-east-1',
     ),
     '#required' => TRUE,
-    '#description' => t('Amazon Web Services Region'),
+    '#description' => t('Amazon Web Services Region.'),
   );
 
   $form['drupal_settings'] = array(
@@ -83,5 +83,26 @@ function aws_sqs_settings_form() {
       'MemoryQueue' => 'MemoryQueue',
     ),
   );
+
+  $form['drupal_settings']['aws_sqs_queue_name_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Queue name prefix'),
+    '#default_value' => variable_get('aws_sqs_queue_name_prefix', ''),
+    '#size' => 30,
+    '#maxlength' => AWS_SQS_QUEUE_NAME_PREFIX_MAXLENGTH,
+    '#description' => t('Optionally prefix queue names to prevent cross-contamination between sites or environments. This is critically important if you use a single AWS account for multiple applications (e.g. example.com, something.com, and somethingelse.com) or for multiple different instances of the same application (e.g. dev.example.com, stage.example.com, example.com). Use any combination of alphanumeric characters, hyphens (-), and underscores (_), e.g., "example-com_" or "example-com_dev_". Keep in mind that queue names are limited to 80 characters, including prefix.'),
+  );
+
   return system_settings_form($form);
+}
+
+/**
+ * Form validation handler for aws_sqs_settings_form().
+ */
+function aws_sqs_settings_form_validate($form, &$form_state) {
+  $aws_sqs_queue_name_prefix = $form_state['values']['aws_sqs_queue_name_prefix'];
+
+  if (preg_match('/^[0-9a-zA-Z\-_]*$/', $aws_sqs_queue_name_prefix) === 0) {
+    form_set_error('aws_sqs_queue_name_prefix', t('The queue name prefix can only contain alphanumeric characters, hyphens (-), and underscores (_).'));
+  }
 }

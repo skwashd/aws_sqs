@@ -6,6 +6,15 @@
  */
 
 /**
+ * The maximum length for a queue name prefix. Since a queue name in SQS can be
+ * no more than 80 characters, we restrict the prefix to fewer in order to leave
+ * reasonable length for actual queue names.
+ *
+ * @see http://aws.amazon.com/sqs/faqs/
+ */
+define('AWS_SQS_QUEUE_NAME_PREFIX_MAXLENGTH', 60);
+
+/**
  * Implements hook_menu().
  */
 function aws_sqs_menu() {
