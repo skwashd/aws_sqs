@@ -6,6 +6,8 @@
 
 /**
  * Menu callback for admin form.
+ *
+ * @see aws_sqs_settings_form_validate()
  */
 function aws_sqs_settings_form() {
   $form['credentials'] = array(
@@ -29,15 +31,19 @@ function aws_sqs_settings_form() {
     '#description' => t('Amazon Web Services Secret Key.'),
   );
 
+  $form['aws_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('AWS settings'),
+  );
   $seconds = range(0, 20);
-  $form['aws_sqs_waittimeseconds'] = array(
+  $form['aws_settings']['aws_sqs_waittimeseconds'] = array(
     '#type' => 'select',
     '#title' => t('Wait Time'),
     '#default_value' => variable_get('aws_sqs_waittimeseconds', 1),
     '#options' => $seconds,
     '#description' => t('How long do you want to stay connected to AWS waiting for a response (seconds)? If a queue is empty, the connection will stay open for up to 20 seconds. If something arrives in the queue, it is returned as soon as it is received. AWS SQS charges per request. Long connections that stay open waiting for data to arrive are cheaper than polling SQS constantly to check for data. Long polling can also consume more resources on your server (think about the difference between running a task every minute that takes a second to complete versus running a task every minute that stays connected for up to 20 seconds every time waiting for jobs to come in). !more', array('!more' => l('Read more about long polling here.', 'http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-long-polling.html#sqs-long-polling-query-api'))),
   );
-  $form['aws_sqs_claimtimeout'] = array(
+  $form['aws_settings']['aws_sqs_claimtimeout'] = array(
     '#type' => 'textfield',
     '#title' => t("Claim Timeout / Visibility Timeout"),
     '#default_value' => variable_get('aws_sqs_claimtimeout', 60),
@@ -45,7 +51,7 @@ function aws_sqs_settings_form() {
     '#description' => t("When an item is claimed from the queue by a worker, how long should the item be hidden from other workers (seconds)? Note: If the item is not deleted before the end of this time, it will become visible to other workers and available to be claimed again. Note also: 12 hours (43,200 seconds) is the maximum amount of time for which an item can be claimed. !more", array('!more' => l('Read more about visibility timeouts here.', 'http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/AboutVT.html'))),
   );
 
-  $form['aws_sqs_region'] = array(
+  $form['aws_settings']['aws_sqs_region'] = array(
     '#type' => 'select',
     '#title' => t('Region'),
     '#default_value' => variable_get('aws_sqs_region', ''),
@@ -59,10 +65,14 @@ function aws_sqs_settings_form() {
       'sa-east-1' => 'sa-east-1',
     ),
     '#required' => TRUE,
-    '#description' => t('Amazon Web Services Region.'),
+    '#description' => t('Amazon Web Services Region'),
   );
 
-  $form['queue_default_class'] = array(
+  $form['drupal_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Drupal settings'),
+  );
+  $form['drupal_settings']['queue_default_class'] = array(
     '#type' => 'select',
     '#title' => t('Default Queue'),
     '#default_value' => variable_get('queue_default_class', 'SystemQueue'),
