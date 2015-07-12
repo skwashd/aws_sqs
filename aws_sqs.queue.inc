@@ -156,21 +156,17 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   /**
-   * Return the amount of items in the queue
+   * Fetches the (approximate) number of items in the queue.
    *
-   * Invokes SqsClient::getQueueAttributes().
-   *  https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-sqs-2012-11-05.html#getqueueattributes
+   * @see SqsClient::getQueueAttributes()
+   * @see https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-sqs-2012-11-05.html#getqueueattributes
+   * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/ApproximateNumber.html
    *
-   * @return integer
-   *   Approximate Number of messages in the aws queue. Returns FALSE if SQS is
-   *   not available.
+   * @return int
+   *   Approximate number of messages in the SQS queue.
    */
   public function numberOfItems() {
-    /*
-      Request attributes of queue from AWS. The response is returned as an
-      Aws\Result object.
-      https://docs.aws.amazon.com/aws-sdk-php/v3/api/class-Aws.Result.html
-    */
+
     $args = array(
       'QueueUrl' => $this->queueUrl,
       'AttributeNames' => array('ApproximateNumberOfMessages'),
@@ -178,14 +174,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     $response = $this->client->getQueueAttributes($args);
 
     $attributes = $response->get('Attributes');
-    if (!empty($attributes['ApproximateNumberOfMessages'])) {
-      $return = $attributes['ApproximateNumberOfMessages'];
-    }
-    else {
-      $return = FALSE;
-    }
-
-    return $return;
+    return (int) $attributes['ApproximateNumberOfMessages'];
   }
 
   /**
