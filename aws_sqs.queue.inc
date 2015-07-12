@@ -131,9 +131,6 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    */
   public function createItem($data) {
 
-    // Encapsulate our data
-    $serialized_data = $this->serialize($data);
-
     // Check to see if someone is trying to save an item originally retrieved
     // from the queue. If so, this really should have been submitted as
     // $item->data, not $item. Reformat this so we don't save metadata or
@@ -143,6 +140,9 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
       $data = $data->data;
       watchdog('aws_sqs', $text, array(), WATCHDOG_ERROR);
     }
+
+    // Encapsulate our data
+    $serialized_data = $this->serialize($data);
 
     // @todo Add a check here for message size? Log it?
 
@@ -329,22 +329,28 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   /**
-   * PHP's native serialize() isn't very portable. This method enables people to
-   * extend this class and support other serialization formats (so that
-   * something other than PHP can potentially process the data in the queue, as
-   * per discussion here: https://drupal.org/node/1956190).
+   * Serializes data before it is added to the queue.
+   *
+   * @param mixed $data
+   *   The data to serialize. Data type and object classes are preserved.
+   *
+   * @return string
+   *   The JSON encoded data.
    */
-  protected static function serialize($data) {
+  protected function serialize($data) {
     return serialize($data);
   }
 
   /**
-   * PHP's native serialize() isn't very portable. This method enables people to
-   * extend this class and support other serialization formats (so that
-   * something other than PHP can potentially process the data in the queue, as
-   * per discussion here: https://drupal.org/node/1956190).
+   * Unserializes the JSON encoded data that has been retrieved from the queue.
+   *
+   * @param string $data
+   *   The JSON data to unserialize.
+   *
+   * @return mixed
+   *   The unserialized data. Objects are always returned as their original type.
    */
-  protected static function unserialize($data) {
+  protected function unserialize($data) {
     return unserialize($data);
   }
 

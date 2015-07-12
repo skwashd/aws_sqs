@@ -1,0 +1,7 @@
+name = Amazon SQS JSON Interface
+description = Defines an interface for Amazon SQS that encodes data in JSON.
+core = 7.x
+
+dependencies[] = aws_sqs
+
+files[] = aws_sqs_json.queue.inc
