@@ -1,53 +1,47 @@
-AWS Simple Queue Service (7.x-1.x)
-===================================
+# AWS Simple Queue Service (7.x-3.x)
 
 This module uses AWS SQS as a backend for Drupal's queue system. You can use AWS SQS as a full replacement for your Drupal queues, or use it for certain queues.
 
-Dependencies
--------------
+## Dependencies
 
-  - composer_manager (module)
-  - composer (drush extension)
+* [composer_manager](https://drupal.org/project/composer_manager) (module)
+* [composer](https://drupal.org/project/composer) (use 8.x-1.x) (drush extension)
 
 
-Installation & Set-up
-----------------------
+## Installation & Set-up
 
-  1. Download and install required projects.
+### Download and Install Dependencies
 
-        drush dl aws_sqs composer_manager composer
-        drush en composer_manager
-        drush en aws_sqs
-        drush composer-rebuild-file
-        drush composer-execute update
+    drush dl aws_sqs composer_manager composer-8.x-1.x
+    drush en aws_sqs
+    drush composer-rebuild-file
+    drush composer-manager update --no-dev --optimize-autoloader
 
-  2. Set up your Amazon account and sign up for SQS.
+### Set up your Amazon Account
 
-        Instructions here:
-        http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/GettingSetUp.html
+* Create an Amazon account.
+* Create a group, user, and granting that user access to SQS.
+* For more information please read the [Amazon SQS "Getting Set Up Guide"](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/GettingSetUp.html)
 
-        - Create an Amazon account.
-        - Creating a group, user, and granting that user access to SQS.
-        - Get set up to submit requests to AWS SQS with PHP.
-        
-        You may also be interested in documentation on AWS SDK for PHP:
-        https://docs.aws.amazon.com/aws-sdk-php/v3/guide/index.html
+### Configure the Module
 
-  3. Enter your AWS credentials.
+* Visit admin/config/system/aws-queue in your site
+* Enter your creds
+* Set AwsSqsQueue as your default queue. If you don't want SQS to be your backend by default, leave it set to SystemQueue and instantiate SQS queues manually with AwsSqsQueue::get().
 
-        - Go here: admin/config/system/aws-queue
-        - Enter your creds
-        - Set AwsSqsQueue as your default queue. If you don't want SQS to be your
-          backend by default, leave it set to SystemQueue and instantiate SQS
-          queues manually with AwsSqsQueue::get().
+### Test Drive with example_queue Module (Optional)
 
-  4. (Optional) Test drive with example_queue module.
+* Download and install the queue_example module from the [examples](https://drupal.org/project/examples):
 
         drush dl examples
         drush en queue_example
-        
-        - Go here: queue_example/insert_remove
-        - Add some items to a queue.
-        - Toggle over to your AWS Console and watch your queued items appear.
-        - Try removing, claiming, releasing, and deleting items from the queue.
-          Watch how these changes are all reflected in the AWS Console.
+
+* Visit queue\_example/insert\_remove in your site
+* Add some items to a queue.
+* Visit AWS SQS Console and watch your queued items appear.
+* Try removing, claiming, releasing, and deleting items from the queue.
+* These changes should be reflected in the AWS Console.
+
+## Resources
+
+* [AWS SDK for PHP Documentation](https://docs.aws.amazon.com/aws-sdk-php/v3/guide/index.html)
