@@ -114,23 +114,6 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   /**
-   * Get the queue's options;
-   *
-   * @param type $name
-   * @return type
-   *
-   * @todo What do these two settings do? Can we get rid of them or move them
-   * to getters/setters?
-   */
-  static private function getOptions($name) {
-    $options = variable_get('aws_sqs_' . $name, array());
-    $defaults = variable_get('aws_sqs_default_queue', array());
-    $options += $defaults;
-
-    return $options;
-  }
-
-  /**
    * Send an item to the AWS Queue.
    *
    * Careful, you can only store data up to 256kb.
