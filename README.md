@@ -31,7 +31,7 @@ Installation & Set-up
         - Get set up to submit requests to AWS SQS with PHP.
         
         You may also be interested in documentation on AWS SDK for PHP:
-        http://docs.aws.amazon.com/aws-sdk-php-2/guide/latest/index.html
+        https://docs.aws.amazon.com/aws-sdk-php/v3/guide/index.html
 
   3. Enter your AWS credentials.
 
