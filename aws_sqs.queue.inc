@@ -42,14 +42,52 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   protected $queueUrl;        // Uniqueue identifier for queue.
   protected $waitTimeSeconds;
 
-  // Constants for AWS regions.
-  const REGION_US_EAST_1      = 'us-east-1';
-  const REGION_US_WEST_1      = 'us-west-1';
-  const REGION_US_WEST_2      = 'us-west-2';
-  const REGION_EU_WEST_1      = 'eu-west-1';
-  const REGION_AP_SOUTHEAST_1 = 'ap-southeast-1';
+  // AWS Regions from https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-regions
+
+  /**
+   * Asia Pacific (Tokyo).
+   */
   const REGION_AP_NORTHEAST_1 = 'ap-northeast-1';
-  const REGION_SA_EAST_1      = 'sa-east-1';
+
+  /**
+   * Asia Pacific (Singapore).
+   */
+  const REGION_AP_SOUTHEAST_1 = 'ap-southeast-1';
+
+  /**
+   * Asia Pacific (Sydney).
+   */
+  const REGION_AP_SOUTHEAST_2 = 'ap-southeast-2';
+
+  /**
+   * EU (Frankfurt).
+   */
+  const REGION_EU_CENTRAL_1 = 'eu-central-1';
+
+  /**
+   * EU (Ireland).
+   */
+  const REGION_EU_WEST_1 = 'eu-west-1';
+
+  /**
+   * South America (Sao Paulo).
+   */
+  const REGION_SA_EAST_1 = 'sa-east-1';
+
+  /**
+   * US East (N. Virginia).
+   */
+  const REGION_US_EAST_1 = 'us-east-1';
+
+  /**
+   * US West (N. California).
+   */
+  const REGION_US_WEST_1 = 'us-west-1';
+
+  /**
+   * US West (Oregon).
+   */
+  const REGION_US_WEST_2 = 'us-west-2';
 
   /**
    * Initialize the Queue Class
@@ -391,7 +429,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   protected function setAwsRegion() {
-    $this->awsRegion = variable_get('aws_sqs_region', self::REGION_EU_WEST_1);
+    $this->awsRegion = variable_get('aws_sqs_region', self::REGION_US_EAST_1);
   }
 
   public function getClaimTimeout() {
