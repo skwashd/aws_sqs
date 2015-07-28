@@ -30,3 +30,30 @@ function aws_sqs_menu() {
   );
   return $items;
 }
+
+/**
+ * Implements hook_aws_sqs_queue_class_info().
+ */
+function aws_sqs_aws_sqs_queue_class_info() {
+  return array('AwsSqsQueue');
+}
+
+/**
+ * Returns a list containing the available queue classes.
+ *
+ * @return $classes
+ *   Queue class list array.
+ */
+function aws_sqs_get_queue_classes() {
+  $classes = array(
+    'SystemQueue',
+    'MemoryQueue',
+  );
+
+  foreach (module_implements('aws_sqs_queue_class_info') as $module) {
+    $class = module_invoke($module, 'aws_sqs_queue_class_info');
+    $classes[] = reset($class);
+  }
+
+  return $classes;
+}
