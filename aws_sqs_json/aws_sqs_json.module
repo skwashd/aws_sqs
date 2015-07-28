@@ -4,3 +4,10 @@
  * @file
  * Amazon SQS JSON module functions.
  */
+
+/**
+ * Implements hook_aws_sqs_queue_class_info().
+ */
+function aws_sqs_json_aws_sqs_queue_class_info() {
+  return array('AwsSqsQueueJson');
+}

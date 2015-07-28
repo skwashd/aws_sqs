@@ -74,16 +74,14 @@ function aws_sqs_settings_form() {
     '#type' => 'fieldset',
     '#title' => t('Drupal settings'),
   );
+
+  $queue_classes = aws_sqs_get_queue_classes();
   $form['drupal_settings']['queue_default_class'] = array(
     '#type' => 'select',
     '#title' => t('Default Queue'),
     '#default_value' => variable_get('queue_default_class', 'SystemQueue'),
     '#description' => t('Set the default queue class. If you select AwsSqsQueue here, AWS SQS will be used anytime a queue is instantiated via DrupalQueue:get($name).'),
-    '#options' => array(
-      'AwsSqsQueue' => 'AwsSqsQueue',
-      'SystemQueue' => 'SystemQueue',
-      'MemoryQueue' => 'MemoryQueue',
-    ),
+    '#options' => array_combine($queue_classes, $queue_classes),
   );
 
   $form['drupal_settings']['aws_sqs_queue_name_prefix'] = array(
