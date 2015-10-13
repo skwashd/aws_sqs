@@ -3,7 +3,7 @@
     "type": "drupal-module",
     "description": "Use the Amazon Simple Queue System.",
     "keywords": ["sqs", "amazon", "queue"],
-    "homepage": "",
+    "homepage": "https://www.drupal.org/project/aws_sqs",
     "license": "GPL-2.0+",
     "authors": [
         {
