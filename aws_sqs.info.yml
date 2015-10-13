@@ -1,6 +1,6 @@
 name: Amazon SQS Queue Interface
 description: Defines a Queue Interface for Amazon SQS
-package: Other
+package: Queues
 core: 8.x
 type: module
 configure : aws_sqs.settings
