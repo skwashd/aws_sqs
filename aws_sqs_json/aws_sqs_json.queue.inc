@@ -10,6 +10,16 @@
  */
 class AwsSqsQueueJson extends AwsSqsQueue {
 
+
+  /**
+   * Returns the queue object for a given name.
+   *
+   * @return object
+   */
+  static public function get($name) {
+    return new AwsSqsQueueJson($name);
+  }
+
   /**
    * Serializes data using JSON before it is added to the queue.
    *
