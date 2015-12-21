@@ -21,20 +21,6 @@
  *
  *  http://guzzlephp.org/
  *
- *
- * Public v. private properties and methods: Drupal coding standards discourage
- * use of private properties. AwsSqs properties here are private to encourage
- * clients to use the DrupalQueue interface, and to hide and harden SQS-specific
- * logic. "Getters" are public to give people access to property data, but use
- * these sparingly. Anywhere a getter is called, code should check
- * `if(module_exists('aws_sqs'))` and/or `if ($queue instanceof AwsSqsQueue)`.
- * If either of these checks returns FALSE, do not call AwsSqsQueue-specific
- * methods, otherwise your module will be tightly coupled with SQS and you will
- * be unable to swap the queue backend out for SystemQueue or other queues.
- * Setters are not public. If you have a use case that requires this (rather
- * than letting property setting be handled by __construct upon instantiation),
- * please post an issue in the issue queue for consideration. This seems like a
- * slippery slope, so we're avoiding it right now.
  */
 use Aws\Sqs\SqsClient;
 
@@ -47,14 +33,14 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    *
    * @var string
    */
-  private $awsKey;          // This is the key that gets sent to AWS with your requests.
-  private $awsSecret;       // Your secret. (This one doesn't get sent.)
-  private $awsRegion;       // Location of AWS data center. (See constants below.)
-  private $claimTimeout;
-  private $client;          // SqsClient provided by AWS as interface to SQS.
-  private $name;            // Queue name.
-  private $queueUrl;        // Uniqueue identifier for queue.
-  private $waitTimeSeconds;
+  protected $awsKey;          // This is the key that gets sent to AWS with your requests.
+  protected $awsSecret;       // Your secret. (This one doesn't get sent.)
+  protected $awsRegion;       // Location of AWS data center. (See constants below.)
+  protected $claimTimeout;
+  protected $client;          // SqsClient provided by AWS as interface to SQS.
+  protected $name;            // Queue name.
+  protected $queueUrl;        // Uniqueue identifier for queue.
+  protected $waitTimeSeconds;
 
   // Constants for AWS regions.
   const REGION_US_EAST_1      = 'us-east-1';
@@ -117,7 +103,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    * @todo What do these two settings do? Can we get rid of them or move them
    * to getters/setters?
    */
-  static private function getOptions($name) {
+  static protected function getOptions($name) {
     $options = variable_get('aws_sqs_' . $name, array());
     $defaults = variable_get('aws_sqs_default_queue', array());
     $options += $defaults;
@@ -353,7 +339,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    *
    * @return bool
    */
-  static private function isGuzzleServiceResourceModel($object) {
+  static protected function isGuzzleServiceResourceModel($object) {
     return (is_object($object) && get_class($object) == 'Guzzle\Service\Resource\Model') ? TRUE : FALSE;
   }
 
@@ -386,7 +372,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->awsKey;
   }
 
-  private function setAwsKey() {
+  protected function setAwsKey() {
     $this->awsKey = variable_get('aws_sqs_aws_key', '');
   }
 
@@ -395,7 +381,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->awsSecret;
   }
 
-  private function setAwsSecret() {
+  protected function setAwsSecret() {
     $this->awsSecret = variable_get('aws_sqs_aws_secret', '');
   }
 
@@ -404,7 +390,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->awsRegion;
   }
 
-  private function setAwsRegion() {
+  protected function setAwsRegion() {
     $this->awsRegion = variable_get('aws_sqs_region', self::REGION_EU_WEST_1);
   }
 
@@ -413,7 +399,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->claimTimeout;
   }
 
-  private function setClaimTimeout() {
+  protected function setClaimTimeout() {
     $this->claimTimeout = variable_get('aws_sqs_claimtimeout', 60);
   }
 
@@ -422,7 +408,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->client;
   }
 
-  private function setClient() {
+  protected function setClient() {
     $client = SqsClient::factory(array(
       'key'    => $this->getAwsKey(),
       'secret' => $this->getAwsSecret(),
@@ -438,7 +424,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->name;
   }
 
-  private function setName($name) {
+  protected function setName($name) {
     $prefix = (string) variable_get('aws_sqs_queue_name_prefix', '');
     $this->name = $prefix . $name;
   }
@@ -457,7 +443,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   /**
    * @see createQueue().
    */
-  private function setQueueUrl($queueUrl) {
+  protected function setQueueUrl($queueUrl) {
     $this->queueUrl = $queueUrl;
   }
 
@@ -466,7 +452,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
     return $this->waitTimeSeconds;
   }
 
-  private function setWaitTimeSeconds() {
+  protected function setWaitTimeSeconds() {
     $this->waitTimeSeconds = variable_get('aws_sqs_waittimeseconds', 1);
   }
 }
