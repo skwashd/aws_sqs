@@ -10,11 +10,16 @@
           "name": "Nick Veenhof",
           "email": "nick.veenhof@acquia.com",
           "homepage": "http://nickveenhof.be/"
+        },
+        {
+          "name": "Dave Hall",
+          "email": "skwashd@gmail.com",
+          "homepage": "https://davehall.com.au/"
         }
     ],
     "require": {
         "php": ">=5.5.0",
-        "aws/aws-sdk-php": "^3.1.0"
+        "aws/aws-sdk-php": "^3.11.7"
     }
 }
 
