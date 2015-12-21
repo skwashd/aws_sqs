@@ -4,3 +4,11 @@
  * @file
  * Amazon SQS JSON module functions.
  */
+
+/**
+ * Implements hook_form_alter().
+ */
+function aws_sqs_json_form_aws_sqs_settings_form_alter(&$form, &$form_state) {
+  $form['drupal_settings']['queue_default_class']['#options']['AwsSqsQueueJson'] = 'AwsSqsQueueJson';
+  asort($form['drupal_settings']['queue_default_class']['#options']);
+}
