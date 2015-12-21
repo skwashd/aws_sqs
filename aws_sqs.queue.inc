@@ -339,6 +339,10 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
    *  DrupalQueueInterface::createQueue() returns nothing. Don't return anything here.
    */
   public function createQueue() {
+    if (!$this->name) {
+      return;
+    }
+
     $result = $this->client->createQueue(array('QueueName' => $this->name));
     $queueUrl = $result->get('QueueUrl');
     $this->setQueueUrl($queueUrl);
@@ -477,7 +481,7 @@ class AwsSqsQueue implements DrupalReliableQueueInterface {
   }
 
   private function setName($name) {
-    $prefix = (string) variable_get('aws_sqs_queue_name_prefix', '');
+    $prefix = (string) variable_get('aws_sqs_queue_name_prefix');
     $this->name = $prefix . $name;
   }
 
