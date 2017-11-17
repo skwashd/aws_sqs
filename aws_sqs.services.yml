@@ -1,4 +1,4 @@
 services:
-  queue.awssqs:
-    class: Drupal\aws_sqs\Queue\AwsSqsQueueFactory
+  aws_sqs.client_factory:
+    class: Drupal\aws_sqs\Queue\AwsSqsClientFactory
     arguments: ['@config.factory', '@logger.factory']
