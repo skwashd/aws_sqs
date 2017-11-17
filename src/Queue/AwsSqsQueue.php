@@ -47,7 +47,7 @@ class AwsSqsQueue implements ReliableQueueInterface {
     protected $waitTimeSeconds;
 
     /**
-     * @var Drupal\Core\Logger\LoggerChannelInterface
+     * @var \Drupal\Core\Logger\LoggerChannelInterface
      */
     protected $logger;
 
@@ -185,9 +185,15 @@ class AwsSqsQueue implements ReliableQueueInterface {
         ));
 
         // @todo Add error handling, in case service becomes unavailable.
+        $response_obj = $response->toArray();
+        // If the response does not contain 'Messages', return false.
+        if (!isset($response_obj['Messages'])) {
+          return FALSE;
+        }
+
+        $messageBody = $response_obj['Messages']['0'];
 
         $item = new \stdClass();
-        $messageBody = $response->toArray()['Messages']['0'];
         $item->data = $messageBody['Body'];
         $item->item_id = $messageBody['ReceiptHandle'];
         if(!empty($item->item_id)) {
