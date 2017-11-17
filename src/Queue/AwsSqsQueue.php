@@ -115,9 +115,9 @@ class AwsSqsQueue implements ReliableQueueInterface {
      * Invokes SqsClient::getQueueAttributes().
      *  http://docs.aws.amazon.com/aws-sdk-php-2/latest/class-Aws.Sqs.SqsClient.html#_getQueueAttributes
      *
-     * @return integer
-     *   Approximate Number of messages in the aws queue. Returns FALSE if SQS is
-     *   not available.
+     * @return int
+     *   Approximate number of messages in the aws queue. Returns 0 if SQS is not
+     *   available.
      */
     public function numberOfItems() {
         // Request attributes of queue from AWS. The response is returned as a Guzzle
@@ -134,7 +134,7 @@ class AwsSqsQueue implements ReliableQueueInterface {
             $return = $attributes['ApproximateNumberOfMessages'];
         }
         else {
-            $return = FALSE;
+            $return = 0;
         }
 
         return $return;
