@@ -26,7 +26,7 @@ function aws_sqs_menu() {
  * to discover non SystemQueue based queues.
  */
 function aws_sqs_queue_info() {
-  // Import variables from settings.php
+  // Import variables from settings.php.
   global $conf;
 
   $queues = array();
@@ -49,19 +49,3 @@ function aws_sqs_queue_info() {
 
   return $queues;
 }
-
-
-/*function aws_sqs_test() {
-  // initialize the queue
-  $queue = Drupal::queue('update_fetch_tasks');
-  // Create the queue
-  $queue->createQueue();
-  // Get some data
-  $item = array('test', '1', '2', '3');
-  // Add the data to the queue
-  $queue->createItem($item);
-  // Fetch the item from the queue
-  $item = $queue->claimItem();
-  $queue->deleteItem($item);
-  //drush_print_r($item);
-}*/

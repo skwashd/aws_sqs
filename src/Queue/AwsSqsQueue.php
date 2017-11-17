@@ -309,7 +309,7 @@ class AwsSqsQueue implements ReliableQueueInterface {
      * @todo: Depend on the Drupal serialization module for this.
      */
     protected static function serialize($data) {
-        return serialize($data);
+        return base64_encode(serialize($data));
     }
 
     /**
@@ -321,7 +321,7 @@ class AwsSqsQueue implements ReliableQueueInterface {
      * @todo: Depend on the Drupal serialization module for this.
      */
     protected static function unserialize($data) {
-        return unserialize($data);
+        return base64_decode(unserialize($data));
     }
 
     /*******************************************************
