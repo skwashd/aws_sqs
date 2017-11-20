@@ -28,7 +28,7 @@ Usage
 -----
 
 ```
-/** @var \Drupal\aws_sqs\AwsSqsClientFactory $factory */
+/** @var \Drupal\aws_sqs\AwsSqsQueueFactory $factory */
 $factory = \Drupal::service('aws_sqs.queue_factory');
 $client = $factory->getQueue('drupal_queue');
 $client->createItem(['foo' => 'bar']);
