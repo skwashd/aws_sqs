@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\aws_sqs\Queue;
+namespace Drupal\aws_sqs;
 
 use Aws\Common\Client\AwsClientInterface;
 use Drupal\aws_sqs\Model\QueueItem;

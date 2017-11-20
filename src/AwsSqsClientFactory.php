@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\aws_sqs\Queue;
+namespace Drupal\aws_sqs;
 
 use Aws\Common\Credentials\Credentials;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -36,7 +36,7 @@ class AwsSqsClientFactory {
   /**
    * The list with initialized queues.
    *
-   * @var \Drupal\aws_sqs\Queue\AwsSqsClient[]
+   * @var \Drupal\aws_sqs\AwsSqsClient[]
    */
   protected $initializedQueues;
 
@@ -79,7 +79,7 @@ class AwsSqsClientFactory {
    * @param bool $force_reinitialize
    *   (optional) Whether to force queue re-initialization.
    *
-   * @return \Drupal\aws_sqs\Queue\AwsSqsClient
+   * @return \Drupal\aws_sqs\AwsSqsClient
    *   Queue object for a given name.
    */
   public function getQueue($name, $force_reinitialize = FALSE) {
