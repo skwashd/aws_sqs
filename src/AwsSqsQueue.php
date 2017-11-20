@@ -22,7 +22,7 @@ use Drupal\Core\Queue\ReliableQueueInterface;
  * objects. More info about Guzzle here:
  *   - http://guzzlephp.org/
  */
-class AwsSqsClient implements ReliableQueueInterface {
+class AwsSqsQueue implements ReliableQueueInterface {
 
   /**
    * The name of the queue this instance is working with.
@@ -67,7 +67,7 @@ class AwsSqsClient implements ReliableQueueInterface {
   protected $logger;
 
   /**
-   * AwsSqsClient constructor.
+   * AwsSqsQueue constructor.
    *
    * @param string $name
    *   The queue name.

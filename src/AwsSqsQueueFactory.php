@@ -10,7 +10,7 @@ use Aws\Sqs\SqsClient;
 /**
  * Aws SQS queue factory.
  */
-class AwsSqsClientFactory {
+class AwsSqsQueueFactory {
 
   /**
    * The config.
@@ -36,12 +36,12 @@ class AwsSqsClientFactory {
   /**
    * The list with initialized queues.
    *
-   * @var \Drupal\aws_sqs\AwsSqsClient[]
+   * @var \Drupal\aws_sqs\AwsSqsQueue[]
    */
   protected $initializedQueues;
 
   /**
-   * Constructs a AwsSqsClient object.
+   * Constructs a AwsSqsQueue object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
@@ -79,12 +79,12 @@ class AwsSqsClientFactory {
    * @param bool $force_reinitialize
    *   (optional) Whether to force queue re-initialization.
    *
-   * @return \Drupal\aws_sqs\AwsSqsClient
+   * @return \Drupal\aws_sqs\AwsSqsQueue
    *   Queue object for a given name.
    */
   public function getQueue($name, $force_reinitialize = FALSE) {
     if (empty($this->initializedQueues[$name]) || $force_reinitialize) {
-      $queue = new AwsSqsClient($name, $this->getClient(), $this->logger);
+      $queue = new AwsSqsQueue($name, $this->getClient(), $this->logger);
       // Ensure that the queue exists.
       $queue->createQueue();
       $queue->setClaimTimeout($this->config->get('aws_sqs_claimtimeout'));
