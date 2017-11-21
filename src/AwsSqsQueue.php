@@ -90,7 +90,6 @@ class AwsSqsQueue implements ReliableQueueInterface {
    *
    * @param mixed $data
    *   Arbitrary data to be associated with the new task in the queue.
-   *
    * @param bool $serialize
    *   (bool) Whether to serialize the data before sending, true by default.
    *
@@ -143,7 +142,6 @@ class AwsSqsQueue implements ReliableQueueInterface {
    * @param int $lease_time
    *   (optional) How long the processing is expected to take in seconds.
    *   0 by default.
-   *
    * @param bool $unserialize
    *   (bool) Whether to un-serialize the data before reading, true by default.
    *
