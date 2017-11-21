@@ -89,19 +89,21 @@ class AwsSqsQueue implements ReliableQueueInterface {
    * http://docs.aws.amazon.com/aws-sdk-php/v3/api/api-sqs-2012-11-05.html#sendmessage.
    *
    * @param mixed $data
-   *   Arbitrary data to be associated with the new task in the queue. It will
-   *   be serialized before sending.
+   *   Arbitrary data to be associated with the new task in the queue.
+   *
+   * @param bool $serialize
+   *   (bool) Whether to serialize the data before sending, true by default.
    *
    * @return string|bool
    *   A unique ID if the item was successfully created and was (best effort)
    *   added to the queue, otherwise FALSE.
    */
-  public function createItem($data) {
+  public function createItem($data, $serialize = TRUE) {
     // @todo Check if data size limit is 64kb (Validate, link to documentation).
     /** @var \Guzzle\Service\Resource\Model $result */
     $result = $this->client->sendMessage([
       'QueueUrl' => $this->getQueueUrl(),
-      'MessageBody' => $this->serialize($data),
+      'MessageBody' => $serialize ? $this->serialize($data) : $data,
     ]);
 
     return $result->get('MessageId') ?: FALSE;
@@ -142,11 +144,14 @@ class AwsSqsQueue implements ReliableQueueInterface {
    *   (optional) How long the processing is expected to take in seconds.
    *   0 by default.
    *
+   * @param bool $unserialize
+   *   (bool) Whether to un-serialize the data before reading, true by default.
+   *
    * @return \Drupal\aws_sqs\Model\QueueItem|bool
    *   On success we return an item object. If the queue is unable to claim an
    *   item it returns false.
    */
-  public function claimItem($lease_time = 0) {
+  public function claimItem($lease_time = 0, $unserialize = TRUE) {
     // This is important to support blocking calls to the queue system.
     $waitTimeSeconds = $this->getWaitTimeSeconds();
     $claimTimeout = ($lease_time) ? $lease_time : $this->getClaimTimeout();
@@ -184,7 +189,7 @@ class AwsSqsQueue implements ReliableQueueInterface {
     }
 
     $item = new QueueItem();
-    $item->setData($this->unserialize($message['Body']));
+    $item->setData($unserialize ? $this->unserialize($message['Body']) : $message['Body']);
     $item->setItemId($message['MessageId']);
     $item->setReceiptHandle($message['ReceiptHandle']);
 
